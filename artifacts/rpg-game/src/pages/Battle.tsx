@@ -9,29 +9,28 @@ import { Button } from '@/components/ui/button';
 import { useQueryClient } from '@tanstack/react-query';
 
 const HERO_BASE = {
-  warrior: { hp: 1000, atk: 150, def: 80, skill: 'Sword Slash' },
-  mage:    { hp: 700,  atk: 220, def: 40, skill: 'Fireball' },
-  assassin:{ hp: 800,  atk: 200, def: 50, skill: 'Shadow Strike' },
+  warrior: { hp: 1000, atk: 150, def: 80,  skill: 'ضربة السيف'  },
+  mage:    { hp: 700,  atk: 220, def: 40,  skill: 'كرة النار'   },
+  assassin:{ hp: 800,  atk: 200, def: 50,  skill: 'ضربة الظل'   },
 };
 
 const MONSTERS = [
-  { name: 'Slime',     hp: 200,  atk: 30,  exp: 20,  gold: 10  },
-  { name: 'Goblin',    hp: 400,  atk: 60,  exp: 50,  gold: 25  },
-  { name: 'Orc',       hp: 700,  atk: 100, exp: 100, gold: 50  },
-  { name: 'Dragon',    hp: 1500, atk: 180, exp: 250, gold: 120 },
-  { name: 'Demon Lord',hp: 3000, atk: 250, exp: 500, gold: 250 },
+  { name: 'Slime',      arName: 'الوحل',       hp: 200,  atk: 30,  exp: 20,  gold: 10  },
+  { name: 'Goblin',     arName: 'الغوبلن',     hp: 400,  atk: 60,  exp: 50,  gold: 25  },
+  { name: 'Orc',        arName: 'الأورك',       hp: 700,  atk: 100, exp: 100, gold: 50  },
+  { name: 'Dragon',     arName: 'التنين',       hp: 1500, atk: 180, exp: 250, gold: 120 },
+  { name: 'Demon Lord', arName: 'سيد الشياطين', hp: 3000, atk: 250, exp: 500, gold: 250 },
 ];
 
 type BattleResult = 'win' | 'lose' | null;
-
 interface FloatingDmg { id: number; val: number; target: 'hero' | 'monster' }
 interface HeroState   { hp: number; maxHp: number; defBonus: number; items: number }
-interface MonsterState{ name: string; hp: number; maxHp: number; atk: number; exp: number; gold: number }
+interface MonsterState{ name: string; arName: string; hp: number; maxHp: number; atk: number; exp: number; gold: number }
 
 export default function Battle() {
-  const [, setLocation] = useLocation();
-  const queryClient   = useQueryClient();
-  const tgUser        = useMemo(() => getTelegramUser(), []);
+  const [, setLocation]   = useLocation();
+  const queryClient       = useQueryClient();
+  const tgUser            = useMemo(() => getTelegramUser(), []);
 
   const { data: player, isLoading } = useGetPlayer(
     { telegram_id: tgUser.telegram_id },
@@ -48,7 +47,7 @@ export default function Battle() {
 
   const [inBattle,     setInBattle]     = useState(false);
   const [heroState,    setHeroState]    = useState<HeroState>({ hp: 0, maxHp: 0, defBonus: 0, items: 3 });
-  const [monsterState, setMonsterState] = useState<MonsterState>({ name: '', hp: 0, maxHp: 0, atk: 0, exp: 0, gold: 0 });
+  const [monsterState, setMonsterState] = useState<MonsterState>({ name: '', arName: '', hp: 0, maxHp: 0, atk: 0, exp: 0, gold: 0 });
   const [heroAnim,     setHeroAnim]     = useState('');
   const [monsterAnim,  setMonsterAnim]  = useState('');
   const [floatingDmg,  setFloatingDmg] = useState<FloatingDmg[]>([]);
@@ -56,7 +55,6 @@ export default function Battle() {
   const [battleLog,    setBattleLog]   = useState<string[]>([]);
   const [result,       setResult]      = useState<BattleResult>(null);
 
-  // Keep a ref to result so callbacks always see the latest value without stale closures
   const resultRef = useRef<BattleResult>(null);
   useEffect(() => { resultRef.current = result; }, [result]);
 
@@ -85,7 +83,7 @@ export default function Battle() {
     });
   }, [tgUser.telegram_id, recordBattleMut]);
 
-  // Initialize battle when player data arrives
+  // Initialize battle
   useEffect(() => {
     if (player?.hero_type && !inBattle && resultRef.current === null) {
       const level      = player.level || 1;
@@ -95,7 +93,7 @@ export default function Battle() {
       const mHp        = Math.floor(template.hp * scale);
       const mAtk       = Math.floor(template.atk * scale);
 
-      setMonsterState({ name: template.name, hp: mHp, maxHp: mHp, atk: mAtk, exp: template.exp, gold: template.gold });
+      setMonsterState({ name: template.name, arName: template.arName, hp: mHp, maxHp: mHp, atk: mAtk, exp: template.exp, gold: template.gold });
 
       const hBase  = HERO_BASE[player.hero_type as keyof typeof HERO_BASE] ?? HERO_BASE.warrior;
       const hScale = 1 + (player.hero_level || 1) * 0.15;
@@ -103,7 +101,7 @@ export default function Battle() {
 
       setHeroState({ hp: hHp, maxHp: hHp, defBonus: 0, items: 3 });
       setIsPlayerTurn(true);
-      setBattleLog(['A wild monster appears!']);
+      setBattleLog(['ظهر وحش شرير!']);
       setResult(null);
       setInBattle(true);
     }
@@ -132,7 +130,7 @@ export default function Battle() {
         spawnDmg(dmg, 'hero');
         setHeroAnim('animate-shake');
         setTimeout(() => setHeroAnim(''), 400);
-        log(`${monsterState.name} attacks for ${dmg} damage!`);
+        log(`${monsterState.arName} يهاجمك بـ ${dmg} ضرر!`);
 
         const nextHp = Math.max(0, prev.hp - dmg);
         return { ...prev, hp: nextHp, defBonus: 0 };
@@ -144,7 +142,7 @@ export default function Battle() {
     return () => clearTimeout(timer);
   }, [isPlayerTurn, inBattle, monsterState, player, spawnDmg, log]);
 
-  // Separate effect: watch hero HP hitting 0 to end battle (avoids side effects inside setter)
+  // Hero HP = 0 → lose
   useEffect(() => {
     if (heroState.hp === 0 && inBattle && resultRef.current === null) {
       setResult('lose');
@@ -163,59 +161,47 @@ export default function Battle() {
     if (type === 'attack') {
       setHeroAnim('animate-attack-lunge');
       setTimeout(() => setHeroAnim(''), 300);
-
       const dmg = Math.max(1, Math.floor(atk * (0.8 + Math.random() * 0.4)));
-
       setTimeout(() => {
         if (resultRef.current !== null) return;
         setMonsterAnim('animate-shake');
         setTimeout(() => setMonsterAnim(''), 400);
         spawnDmg(dmg, 'monster');
-        log(`You attack for ${dmg} damage!`);
-
-        setMonsterState(prev => {
-          const nextHp = Math.max(0, prev.hp - dmg);
-          return { ...prev, hp: nextHp };
-        });
+        log(`تهاجم بـ ${dmg} ضرر!`);
+        setMonsterState(prev => ({ ...prev, hp: Math.max(0, prev.hp - dmg) }));
         setIsPlayerTurn(false);
       }, 200);
 
     } else if (type === 'skill') {
       setHeroAnim('animate-skill-pulse');
       setTimeout(() => setHeroAnim(''), 1000);
-
       const dmg = Math.max(1, Math.floor(atk * 2.5 * (0.8 + Math.random() * 0.4)));
-
       setTimeout(() => {
         if (resultRef.current !== null) return;
         setMonsterAnim('animate-shake');
         setTimeout(() => setMonsterAnim(''), 400);
         spawnDmg(dmg, 'monster');
-        log(`You used ${hBase.skill} for ${dmg} damage!`);
-
-        setMonsterState(prev => {
-          const nextHp = Math.max(0, prev.hp - dmg);
-          return { ...prev, hp: nextHp };
-        });
+        log(`استخدمت ${hBase.skill} بـ ${dmg} ضرر!`);
+        setMonsterState(prev => ({ ...prev, hp: Math.max(0, prev.hp - dmg) }));
         setIsPlayerTurn(false);
       }, 800);
 
     } else if (type === 'defend') {
       const defBonus = Math.floor(hBase.def * hScale * 0.5);
       setHeroState(prev => ({ ...prev, defBonus }));
-      log('You brace for impact. DEF increased.');
+      log('تتخذ موقفاً دفاعياً. الدفاع ارتفع!');
       setIsPlayerTurn(false);
 
     } else if (type === 'item') {
-      if (heroState.items <= 0) { log('No items left!'); return; }
+      if (heroState.items <= 0) { log('لا توجد عناصر متبقية!'); return; }
       const heal = Math.floor(heroState.maxHp * 0.2);
       setHeroState(prev => ({ ...prev, hp: Math.min(prev.maxHp, prev.hp + heal), items: prev.items - 1 }));
-      log(`Used potion. Recovered ${heal} HP.`);
+      log(`استخدمت جرعة. استعدت ${heal} صحة.`);
       setIsPlayerTurn(false);
     }
   }, [isPlayerTurn, player, heroState.items, heroState.maxHp, spawnDmg, log]);
 
-  // Watch monster HP hitting 0 to end battle
+  // Monster HP = 0 → win
   useEffect(() => {
     if (monsterState.hp === 0 && inBattle && resultRef.current === null) {
       setResult('win');
@@ -228,7 +214,7 @@ export default function Battle() {
     return (
       <PageTransition className="justify-center items-center">
         <div className="w-12 h-12 border-4 border-primary border-t-accent rounded-full animate-spin" />
-        <div className="mt-4 text-accent font-bold tracking-widest uppercase">Summoning...</div>
+        <div className="mt-4 text-accent font-bold tracking-widest">جاري الاستدعاء...</div>
       </PageTransition>
     );
   }
@@ -236,9 +222,9 @@ export default function Battle() {
   if (!player?.hero_type && !result) {
     return (
       <PageTransition className="justify-center items-center p-6 text-center">
-        <h2 className="text-xl font-black text-white mb-4">You need a hero to fight!</h2>
+        <h2 className="text-xl font-black text-white mb-4">تحتاج إلى بطل للقتال!</h2>
         <Button onClick={() => setLocation('/heroes')} className="bg-primary hover:bg-primary/90 text-white font-bold uppercase tracking-widest border border-red-500">
-          Go to Summoning
+          اذهب إلى الاستدعاء
         </Button>
       </PageTransition>
     );
@@ -251,10 +237,10 @@ export default function Battle() {
       {/* Header */}
       <div className="absolute top-0 w-full p-4 flex justify-between items-center z-20 bg-gradient-to-b from-black/80 to-transparent">
         <Button variant="ghost" size="sm" className="text-white hover:bg-white/10" onClick={() => setLocation('/')} disabled={inBattle && !result}>
-          Run Away
+          هروب
         </Button>
         <div className="text-xs font-black tracking-widest text-muted-foreground uppercase">
-          Turn: <span className={isPlayerTurn ? 'text-accent' : 'text-primary'}>{isPlayerTurn ? 'Player' : 'Enemy'}</span>
+          الدور: <span className={isPlayerTurn ? 'text-accent' : 'text-primary'}>{isPlayerTurn ? 'اللاعب' : 'العدو'}</span>
         </div>
       </div>
 
@@ -264,7 +250,7 @@ export default function Battle() {
         {/* Monster */}
         <div className="w-full flex flex-col items-center justify-end h-48 mb-8 relative">
           <div className="w-48 text-center mb-2">
-            <div className="text-sm font-bold text-white mb-1 uppercase tracking-wider">{monsterState.name}</div>
+            <div className="text-sm font-bold text-white mb-1 uppercase tracking-wider">{monsterState.arName}</div>
             <div className="h-2 w-full bg-black rounded-full overflow-hidden border border-border">
               <div
                 className="h-full bg-red-600 transition-all duration-300"
@@ -317,25 +303,25 @@ export default function Battle() {
             className="h-12 bg-primary hover:bg-primary/80 text-white font-bold border border-red-500 shadow-[0_0_10px_rgba(139,0,0,0.3)]"
             onClick={() => handleAction('attack')}
             disabled={!isPlayerTurn || result !== null}
-          >ATTACK</Button>
+          >هجوم</Button>
           <Button
             className="h-12 bg-secondary hover:bg-secondary/80 text-white font-bold border border-secondary/50"
             onClick={() => handleAction('skill')}
             disabled={!isPlayerTurn || result !== null}
-          >SKILL</Button>
+          >مهارة</Button>
           <Button
             variant="outline"
             className="h-10 bg-transparent border-muted text-muted-foreground hover:text-white"
             onClick={() => handleAction('defend')}
             disabled={!isPlayerTurn || result !== null}
-          >DEFEND</Button>
+          >دفاع</Button>
           <Button
             variant="outline"
             className="h-10 bg-transparent border-muted text-muted-foreground hover:text-white flex justify-between px-4"
             onClick={() => handleAction('item')}
             disabled={!isPlayerTurn || result !== null || heroState.items <= 0}
           >
-            <span>ITEM</span>
+            <span>عنصر</span>
             <span className="text-[10px] bg-secondary px-1.5 py-0.5 rounded text-white">{heroState.items}</span>
           </Button>
         </div>
@@ -348,23 +334,23 @@ export default function Battle() {
             className={`text-5xl font-black uppercase tracking-widest mb-2 ${result === 'win' ? 'text-accent' : 'text-primary'}`}
             style={{ textShadow: `0 0 20px ${result === 'win' ? 'rgba(240,192,64,0.5)' : 'rgba(139,0,0,0.8)'}` }}
           >
-            {result === 'win' ? 'VICTORY' : 'DEFEATED'}
+            {result === 'win' ? 'انتصار!' : 'هُزمت!'}
           </h2>
           {result === 'win' ? (
             <div className="bg-card border border-border p-6 rounded-xl w-full max-w-xs text-center my-8">
-              <div className="text-sm text-muted-foreground uppercase tracking-wider mb-4">Rewards</div>
+              <div className="text-sm text-muted-foreground uppercase tracking-wider mb-4">المكافآت</div>
               <div className="flex justify-between items-center mb-4">
-                <span className="text-white font-bold">EXP</span>
+                <span className="text-white font-bold">خبرة</span>
                 <span className="text-green-400 font-mono text-xl">+{monsterState.exp}</span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-white font-bold">Gold</span>
+                <span className="text-white font-bold">ذهب</span>
                 <span className="text-accent font-mono text-xl">+{monsterState.gold}</span>
               </div>
             </div>
           ) : (
             <div className="text-muted-foreground my-8 text-center px-4">
-              Your hero falls. Gather your strength and try again.
+              سقط بطلك. اجمع قوتك وحاول مجدداً.
             </div>
           )}
           <Button
@@ -372,7 +358,7 @@ export default function Battle() {
             onClick={() => setLocation('/')}
             disabled={recordBattleMut.isPending}
           >
-            {recordBattleMut.isPending ? 'Recording...' : 'Return'}
+            {recordBattleMut.isPending ? 'جاري الحفظ...' : 'العودة'}
           </Button>
         </div>
       )}
