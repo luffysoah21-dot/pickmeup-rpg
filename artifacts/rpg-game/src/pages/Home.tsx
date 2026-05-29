@@ -6,13 +6,22 @@ import { getTelegramUser } from '@/lib/telegram';
 import { HeroArt } from '@/components/HeroArt';
 import { Button } from '@/components/ui/button';
 
+const EXP_TO_NEXT = (level: number) =>
+  Math.floor(100 * Math.pow(1.4, Math.max(1, level) - 1));
+
 export default function Home() {
   const [, setLocation] = useLocation();
   const tgUser = useMemo(() => getTelegramUser(), []);
 
   const { data: player, isLoading } = useGetPlayer(
     { telegram_id: tgUser.telegram_id, username: tgUser.username },
-    { query: { enabled: !!tgUser.telegram_id, queryKey: getGetPlayerQueryKey({ telegram_id: tgUser.telegram_id, username: tgUser.username }) } }
+    {
+      query: {
+        enabled: !!tgUser.telegram_id,
+        queryKey: getGetPlayerQueryKey({ telegram_id: tgUser.telegram_id, username: tgUser.username }),
+        staleTime: 0,
+      },
+    }
   );
 
   if (isLoading) {
@@ -24,6 +33,14 @@ export default function Home() {
     );
   }
 
+  const level = player?.level || 1;
+  const exp = player?.exp ?? 0;
+  // Server sends exp_to_next; fall back to client formula if server returns 0 (stale cache / edge case)
+  const expToNext = player?.exp_to_next && player.exp_to_next > 0
+    ? player.exp_to_next
+    : EXP_TO_NEXT(level);
+  const expPercent = Math.min(100, (exp / expToNext) * 100);
+
   const needsHero = !player?.hero_type;
 
   return (
@@ -31,22 +48,24 @@ export default function Home() {
       <Particles />
 
       <div className="z-10 flex flex-col items-center">
+        {/* Header row: name left, gold + level right */}
         <div className="w-full flex justify-between items-start mb-8">
           <div className="flex flex-col">
             <span className="text-muted-foreground text-xs uppercase font-bold tracking-wider">اللاعب</span>
             <span className="text-xl font-black text-white">{player?.username || tgUser.username}</span>
           </div>
-          <div className="flex flex-col items-start">
-            <div className="flex items-center gap-1">
+          <div className="flex flex-col items-end gap-0.5">
+            <div className="flex items-center gap-1.5">
               <span className="w-3 h-3 bg-accent rounded-full shadow-[0_0_5px_hsl(var(--accent))]" />
-              <span className="text-accent font-bold">{player?.gold || 0}</span>
+              <span className="text-accent font-bold font-mono">{player?.gold ?? 0}</span>
             </div>
-            <span className="text-primary font-bold">مستوى {player?.level || 1}</span>
+            <span className="text-primary font-bold">مستوى {level}</span>
           </div>
         </div>
 
+        {/* Hero portrait */}
         <div className="relative w-48 h-48 flex items-center justify-center mb-8 border border-primary/30 rounded-full shadow-[inset_0_0_20px_rgba(139,0,0,0.2)] bg-card/50 backdrop-blur-sm">
-          <div className="absolute inset-0 rounded-full border border-accent/20 animate-[spin_10s_linear_infinite]" />
+          <div className="absolute inset-0 rounded-full border border-accent/20" style={{ animation: 'idle-spin-cw 10s linear infinite' }} />
           <HeroArt type={player?.hero_type} className="scale-150" />
         </div>
 
@@ -59,12 +78,12 @@ export default function Home() {
           <div className="w-full mb-8">
             <div className="flex justify-between text-xs font-bold text-muted-foreground mb-1">
               <span>الخبرة</span>
-              <span>{player?.exp} / {player?.exp_to_next}</span>
+              <span className="font-mono tabular-nums">{exp} / {expToNext}</span>
             </div>
-            <div className="h-2 w-full bg-card rounded-full overflow-hidden border border-border">
+            <div className="h-2.5 w-full bg-card rounded-full overflow-hidden border border-border">
               <div
-                className="h-full bg-primary"
-                style={{ width: `${Math.min(100, ((player?.exp || 0) / (player?.exp_to_next || 1)) * 100)}%` }}
+                className="h-full bg-gradient-to-r from-primary to-accent transition-all duration-500"
+                style={{ width: `${expPercent}%` }}
               />
             </div>
           </div>

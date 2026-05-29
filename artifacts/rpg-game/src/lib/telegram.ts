@@ -7,35 +7,33 @@ export interface TelegramUser {
 }
 
 export function getTelegramUser(): { telegram_id: string; username: string } {
-  // Check if Telegram WebApp is available
   // @ts-ignore
   const tg = window.Telegram?.WebApp;
-  
+
   if (tg?.initDataUnsafe?.user) {
     const user = tg.initDataUnsafe.user as TelegramUser;
+    const displayName =
+      user.username
+        ? `@${user.username}`
+        : [user.first_name, user.last_name].filter(Boolean).join(' ') || `User${user.id}`;
     return {
       telegram_id: user.id.toString(),
-      username: user.username || user.first_name || `User${user.id}`,
+      username: displayName,
     };
   }
 
-  // Fallback for browser testing
-  // Check local storage for persistent test user
-  const storedId = localStorage.getItem('test_telegram_id');
-  const storedName = localStorage.getItem('test_username');
-  
-  if (storedId && storedName) {
-    return { telegram_id: storedId, username: storedName };
+  // Browser testing fallback — stable per device, never random
+  let storedId = localStorage.getItem('tg_test_id');
+  let storedName = localStorage.getItem('tg_test_name');
+
+  if (!storedId) {
+    storedId = `test_${Date.now()}`;
+    storedName = 'بطل_اختبار';
+    localStorage.setItem('tg_test_id', storedId);
+    localStorage.setItem('tg_test_name', storedName!);
   }
 
-  // Generate new test user
-  const randomId = Math.floor(Math.random() * 1000000).toString();
-  const randomName = `Player_${randomId.substring(0, 4)}`;
-  
-  localStorage.setItem('test_telegram_id', randomId);
-  localStorage.setItem('test_username', randomName);
-  
-  return { telegram_id: randomId, username: randomName };
+  return { telegram_id: storedId, username: storedName || 'بطل_اختبار' };
 }
 
 export function initTelegramApp() {
@@ -43,14 +41,12 @@ export function initTelegramApp() {
   const tg = window.Telegram?.WebApp;
   if (tg) {
     tg.ready();
-    tg.expand(); // Request full height
-    
-    // Set theme colors if possible
+    tg.expand();
     try {
       tg.setHeaderColor('#1a0a2e');
       tg.setBackgroundColor('#1a0a2e');
-    } catch (e) {
-      // Ignore
+    } catch (_) {
+      // ignore
     }
   }
 }
