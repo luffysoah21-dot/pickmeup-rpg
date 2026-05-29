@@ -12,10 +12,12 @@ export function getTelegramUser(): { telegram_id: string; username: string } {
 
   if (tg?.initDataUnsafe?.user) {
     const user = tg.initDataUnsafe.user as TelegramUser;
+    // Prefer @username handle, then full real name
     const displayName =
       user.username
-        ? `@${user.username}`
-        : [user.first_name, user.last_name].filter(Boolean).join(' ') || `User${user.id}`;
+        ? user.username
+        : [user.first_name, user.last_name].filter(Boolean).join(' ') ||
+          `User${user.id}`;
     return {
       telegram_id: user.id.toString(),
       username: displayName,
