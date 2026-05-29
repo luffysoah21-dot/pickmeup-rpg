@@ -1,0 +1,68 @@
+Build a Telegram Mini App RPG game similar to "Pick Me Up" manhwa.
+
+TELEGRAM CONFIG:
+- Bot Token: 8672207260:AAGyt6QW5mhXLpotyAfPaNlcUdrDfaJLvSk
+- Supabase URL: https://hlvmubdcbsoycdsjtbma.supabase.co
+- Supabase Anon Key: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhsdm11YmRjYnNveWNkc2p0Ym1hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAwNDM4MzUsImV4cCI6MjA5NTYxOTgzNX0.LHds_kIZmB0FplFakcZqFZGCqLEvBj48YqVX_gjjTDY
+
+TECH STACK:
+- Frontend: Pure HTML + CSS + JavaScript (no framework)
+- Backend: Node.js + Express
+- Database: Supabase (already configured above)
+- Telegram: telegraf.js library
+
+GAME FEATURES TO BUILD:
+
+1. MAIN MENU SCREEN
+- Dark fantasy theme with animated background
+- Player name and level display
+- 4 buttons: Play, Heroes, Shop, Leaderboard
+
+2. HERO SELECTION SCREEN
+- 3 starter heroes with different stats:
+  * Warrior (HP:1000, ATK:150, DEF:80, SKILL: Sword Slash)
+  * Mage (HP:700, ATK:220, DEF:40, SKILL: Fireball)
+  * Assassin (HP:800, ATK:200, DEF:50, SKILL: Shadow Strike)
+- Each hero has pixel art style avatar using CSS/emojis
+- Show hero stats clearly
+
+3. COMBAT SYSTEM (Turn-based)
+- Player hero vs Monster
+- 5 different monsters with increasing difficulty:
+  * Slime (HP:200, ATK:30)
+  * Goblin (HP:400, ATK:60)
+  * Orc (HP:700, ATK:100)
+  * Dragon (HP:1500, ATK:180)
+  * Demon Lord (HP:3000, ATK:250)
+- Combat actions: Attack, Skill, Defend, Item
+- HP bars with smooth animations
+- Damage numbers floating animation
+- Win/Lose screen with rewards
+
+4. PROGRESSION SYSTEM
+- EXP and leveling up (max level 50)
+- Gold currency from battles
+- Simple skill upgrade system
+- Save all progress to Supabase
+
+5. UI/UX DESIGN
+- Dark fantasy color scheme (deep purple, gold, dark red)
+- Smooth CSS animations for attacks
+- Mobile-first design (fits Telegram mobile screen)
+- Screen shake effect on taking damage
+- Particle effects using CSS
+
+6. SUPABASE DATABASE TABLES:
+Create these tables automatically:
+- players (id, telegram_id, username, level, exp, gold, hero_type, hero_level)
+- battles (id, player_id, monster_name, result, rewards, created_at)
+
+7. TELEGRAM BOT SETUP:
+- /start command opens the Mini App
+- Set menu button to launch the web app
+- Webhook setup
+
+Make the game visually impressive with smooth animations.
+The entire game must work perfectly on mobile screens inside Telegram.
+Use CSS animations instead of heavy libraries to keep it fast.
+Make combat feel exciting with visual feedback.
