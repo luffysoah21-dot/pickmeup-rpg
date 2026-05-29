@@ -3,13 +3,19 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: Telegram RPG Game API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: players
+    description: Player management
+  - name: battles
+    description: Battle management
+  - name: leaderboard
+    description: Leaderboard
 paths:
   /healthz:
     get:
@@ -24,6 +30,143 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /players/me:
+    get:
+      operationId: getPlayer
+      tags: [players]
+      summary: Get or create current player
+      parameters:
+        - name: telegram_id
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: username
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Player data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Player"
+
+  /players/me/hero:
+    patch:
+      operationId: selectHero
+      tags: [players]
+      summary: Select hero type for player
+      parameters:
+        - name: telegram_id
+          in: query
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/HeroSelection"
+      responses:
+        "200":
+          description: Updated player
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Player"
+
+  /players/me/skill:
+    patch:
+      operationId: upgradeSkill
+      tags: [players]
+      summary: Upgrade hero skill level
+      parameters:
+        - name: telegram_id
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Updated player
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Player"
+
+  /battles:
+    post:
+      operationId: recordBattle
+      tags: [battles]
+      summary: Record a battle result
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BattleInput"
+      responses:
+        "201":
+          description: Battle recorded + updated player
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BattleResult"
+
+  /battles/history:
+    get:
+      operationId: getBattleHistory
+      tags: [battles]
+      summary: Get recent battle history for a player
+      parameters:
+        - name: telegram_id
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 10
+      responses:
+        "200":
+          description: List of recent battles
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Battle"
+
+  /leaderboard:
+    get:
+      operationId: getLeaderboard
+      tags: [leaderboard]
+      summary: Get top players by level and gold
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 20
+      responses:
+        "200":
+          description: Leaderboard entries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/LeaderboardEntry"
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +177,92 @@ components:
       required:
         - status
 
+    Player:
+      type: object
+      required: [id, telegram_id, username, level, exp, gold, hero_type, hero_level, exp_to_next]
+      properties:
+        id:
+          type: integer
+        telegram_id:
+          type: string
+        username:
+          type: string
+        level:
+          type: integer
+        exp:
+          type: integer
+        exp_to_next:
+          type: integer
+        gold:
+          type: integer
+        hero_type:
+          type: ["string", "null"]
+        hero_level:
+          type: integer
+
+    HeroSelection:
+      type: object
+      required: [hero_type]
+      properties:
+        hero_type:
+          type: string
+          enum: [warrior, mage, assassin]
+
+    BattleInput:
+      type: object
+      required: [telegram_id, monster_name, result, exp_gained, gold_gained]
+      properties:
+        telegram_id:
+          type: string
+        monster_name:
+          type: string
+        result:
+          type: string
+          enum: [win, lose]
+        exp_gained:
+          type: integer
+        gold_gained:
+          type: integer
+
+    BattleResult:
+      type: object
+      required: [battle, player]
+      properties:
+        battle:
+          $ref: "#/components/schemas/Battle"
+        player:
+          $ref: "#/components/schemas/Player"
+
+    Battle:
+      type: object
+      required: [id, player_id, monster_name, result, exp_gained, gold_gained, created_at]
+      properties:
+        id:
+          type: integer
+        player_id:
+          type: integer
+        monster_name:
+          type: string
+        result:
+          type: string
+        exp_gained:
+          type: integer
+        gold_gained:
+          type: integer
+        created_at:
+          type: string
+
+    LeaderboardEntry:
+      type: object
+      required: [rank, username, level, gold, hero_type]
+      properties:
+        rank:
+          type: integer
+        username:
+          type: string
+        level:
+          type: integer
+        gold:
+          type: integer
+        hero_type:
+          type: ["string", "null"]

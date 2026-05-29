@@ -1,5 +1,6 @@
 import app from "./app";
 import { logger } from "./lib/logger";
+import { setupTelegramBot } from "./lib/telegram-bot";
 
 const rawPort = process.env["PORT"];
 
@@ -22,4 +23,12 @@ app.listen(port, (err) => {
   }
 
   logger.info({ port }, "Server listening");
+
+  // Determine the web app URL from REPLIT_DOMAINS env var
+  const domains = process.env.REPLIT_DOMAINS;
+  const webAppUrl = domains
+    ? `https://${domains.split(",")[0]}/`
+    : `http://localhost:${port}/`;
+
+  setupTelegramBot(webAppUrl);
 });
