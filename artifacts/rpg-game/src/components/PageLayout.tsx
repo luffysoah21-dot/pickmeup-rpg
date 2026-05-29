@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { motion } from 'framer-motion';
 
 export const PageTransition = ({ children, className = '' }: { children: React.ReactNode, className?: string }) => {
@@ -15,17 +15,30 @@ export const PageTransition = ({ children, className = '' }: { children: React.R
   );
 };
 
+// Generate stable particle positions once per mount to avoid Math.random() in render
+const PARTICLE_COUNT = 20;
+
 export const Particles = () => {
+  const particles = useMemo(() =>
+    Array.from({ length: PARTICLE_COUNT }, (_, i) => ({
+      id: i,
+      left: `${(i * 5.3 + 2) % 100}%`,
+      animationDelay: `${(i * 0.27) % 5}s`,
+      animationDuration: `${3 + (i * 0.37) % 4}s`,
+    })),
+    []
+  );
+
   return (
     <div className="particles">
-      {Array.from({ length: 20 }).map((_, i) => (
+      {particles.map((p) => (
         <div
-          key={i}
+          key={p.id}
           className="particle"
           style={{
-            left: `${Math.random() * 100}%`,
-            animationDelay: `${Math.random() * 5}s`,
-            animationDuration: `${3 + Math.random() * 4}s`,
+            left: p.left,
+            animationDelay: p.animationDelay,
+            animationDuration: p.animationDuration,
           }}
         />
       ))}
