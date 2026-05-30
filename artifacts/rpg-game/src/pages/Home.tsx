@@ -6,8 +6,8 @@ import { getTelegramUser } from '@/lib/telegram';
 import { HeroArt } from '@/components/HeroArt';
 import { Button } from '@/components/ui/button';
 
-const EXP_TO_NEXT = (level: number) =>
-  Math.floor(100 * Math.pow(1.4, Math.max(1, level) - 1));
+/** Client-side fallback: EXP needed to advance from current level. level * 100 matches server. */
+const EXP_TO_NEXT = (level: number) => level * 100;
 
 export default function Home() {
   const [, setLocation] = useLocation();

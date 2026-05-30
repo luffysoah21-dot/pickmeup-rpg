@@ -10,7 +10,8 @@ import { serializePlayer } from "../lib/player-serializer";
 
 const router: IRouter = Router();
 
-const EXP_PER_LEVEL = (level: number) => Math.floor(100 * Math.pow(1.4, level - 1));
+/** EXP required to advance FROM this level. Simple linear: level * 100. */
+const EXP_PER_LEVEL = (level: number) => level * 100;
 
 function serializeBattle(b: { id: number; playerId: number; monsterName: string; result: string; expGained: number; goldGained: number; createdAt: Date }) {
   return {

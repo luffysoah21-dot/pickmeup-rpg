@@ -27,8 +27,8 @@ interface FloatingDmg { id: number; val: number; target: 'hero' | 'monster'; isC
 interface HeroState    { hp: number; maxHp: number; defBonus: number; items: number }
 interface MonsterState { name: string; arName: string; emoji: string; hp: number; maxHp: number; atk: number; exp: number; gold: number }
 
-const CRIT_CHANCE  = 0.15;
-const CRIT_MULT    = 1.8;
+const CRIT_CHANCE = 0.15;
+const CRIT_MULT   = 1.8;
 
 export default function Battle() {
   const [, setLocation] = useLocation();
@@ -53,15 +53,17 @@ export default function Battle() {
   const [monsterState,  setMonsterState]  = useState<MonsterState>({ name: '', arName: '', emoji: '', hp: 0, maxHp: 0, atk: 0, exp: 0, gold: 0 });
   const [heroAnim,      setHeroAnim]      = useState('');
   const [monsterAnim,   setMonsterAnim]   = useState('');
+  const [screenShake,   setScreenShake]   = useState(false);
+  const [showCritText,  setShowCritText]  = useState(false);
+  const [showCritFlash, setShowCritFlash] = useState(false);
   const [floatingDmg,   setFloatingDmg]  = useState<FloatingDmg[]>([]);
   const [isPlayerTurn,  setIsPlayerTurn]  = useState(true);
   const [battleLog,     setBattleLog]    = useState<string[]>([]);
   const [result,        setResult]       = useState<BattleResult>(null);
   const [comboCount,    setComboCount]   = useState(0);
-  const [showCritFlash, setShowCritFlash] = useState(false);
 
-  const resultRef  = useRef<BattleResult>(null);
-  const comboRef   = useRef(0);
+  const resultRef = useRef<BattleResult>(null);
+  const comboRef  = useRef(0);
   useEffect(() => { resultRef.current = result; }, [result]);
   useEffect(() => { comboRef.current = comboCount; }, [comboCount]);
 
@@ -90,28 +92,38 @@ export default function Battle() {
     });
   }, [tgUser.telegram_id, recordBattleMut]);
 
-  // Initialize battle
+  const initBattle = useCallback(() => {
+    if (!player?.hero_type) return;
+    const level      = player.level || 1;
+    const monsterIdx = Math.min(Math.floor((level - 1) / 2), MONSTERS.length - 1);
+    const template   = MONSTERS[monsterIdx];
+    const scale      = 1 + level * 0.1;
+    const mHp        = Math.floor(template.hp * scale);
+    const mAtk       = Math.floor(template.atk * scale);
+
+    const hBase  = HERO_BASE[player.hero_type as keyof typeof HERO_BASE] ?? HERO_BASE.warrior;
+    const hScale = 1 + (player.hero_level || 1) * 0.15;
+    const hHp    = Math.floor(hBase.hp * hScale);
+
+    setMonsterState({ ...template, hp: mHp, maxHp: mHp, atk: mAtk });
+    setHeroState({ hp: hHp, maxHp: hHp, defBonus: 0, items: 3 });
+    setIsPlayerTurn(true);
+    setComboCount(0);
+    setBattleLog([`${template.emoji} ظهر ${template.arName}!`]);
+    setResult(null);
+    setFloatingDmg([]);
+    setHeroAnim('');
+    setMonsterAnim('');
+    setScreenShake(false);
+    setShowCritText(false);
+    setShowCritFlash(false);
+    setInBattle(true);
+  }, [player]);
+
+  // Initialize battle on first load
   useEffect(() => {
     if (player?.hero_type && !inBattle && resultRef.current === null) {
-      const level      = player.level || 1;
-      const monsterIdx = Math.min(Math.floor((level - 1) / 2), MONSTERS.length - 1);
-      const template   = MONSTERS[monsterIdx];
-      const scale      = 1 + level * 0.1;
-      const mHp        = Math.floor(template.hp * scale);
-      const mAtk       = Math.floor(template.atk * scale);
-
-      setMonsterState({ ...template, hp: mHp, maxHp: mHp, atk: mAtk });
-
-      const hBase  = HERO_BASE[player.hero_type as keyof typeof HERO_BASE] ?? HERO_BASE.warrior;
-      const hScale = 1 + (player.hero_level || 1) * 0.15;
-      const hHp    = Math.floor(hBase.hp * hScale);
-
-      setHeroState({ hp: hHp, maxHp: hHp, defBonus: 0, items: 3 });
-      setIsPlayerTurn(true);
-      setComboCount(0);
-      setBattleLog([`${template.emoji} ظهر ${template.arName}!`]);
-      setResult(null);
-      setInBattle(true);
+      initBattle();
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [player]);
@@ -136,6 +148,11 @@ export default function Battle() {
         dmg = Math.max(1, Math.floor(dmg * (0.8 + Math.random() * 0.4)));
 
         spawnDmg(dmg, 'hero');
+
+        // Screen shake when player takes damage
+        setScreenShake(true);
+        setTimeout(() => setScreenShake(false), 500);
+
         setHeroAnim('animate-shake');
         setTimeout(() => setHeroAnim(''), 400);
         log(`${monsterState.emoji} ${monsterState.arName} يهاجمك بـ ${dmg} ضرر!`);
@@ -167,9 +184,9 @@ export default function Battle() {
     const atk    = Math.floor(hBase.atk * hScale);
 
     if (type === 'attack') {
-      const isCrit = Math.random() < CRIT_CHANCE;
-      const mult   = isCrit ? CRIT_MULT : 1;
-      const dmg    = Math.max(1, Math.floor(atk * mult * (0.8 + Math.random() * 0.4)));
+      const isCrit   = Math.random() < CRIT_CHANCE;
+      const mult     = isCrit ? CRIT_MULT : 1;
+      const dmg      = Math.max(1, Math.floor(atk * mult * (0.8 + Math.random() * 0.4)));
       const newCombo = comboRef.current + 1;
 
       setHeroAnim('animate-attack-lunge');
@@ -183,8 +200,10 @@ export default function Battle() {
 
         if (isCrit) {
           setShowCritFlash(true);
+          setShowCritText(true);
           setTimeout(() => setShowCritFlash(false), 600);
-          log(`⚡ ضربة حاسمة! x${newCombo} كومبو — ${dmg} ضرر!`);
+          setTimeout(() => setShowCritText(false), 1200);
+          log(`⚡ ضربة حرجة! x${newCombo} كومبو — ${dmg} ضرر!`);
         } else if (newCombo >= 3) {
           log(`🔥 كومبو x${newCombo}! تهاجم بـ ${dmg} ضرر!`);
         } else {
@@ -212,8 +231,10 @@ export default function Battle() {
 
         if (isCrit) {
           setShowCritFlash(true);
+          setShowCritText(true);
           setTimeout(() => setShowCritFlash(false), 600);
-          log(`⚡ مهارة حاسمة! ${hBase.skill} — ${dmg} ضرر!`);
+          setTimeout(() => setShowCritText(false), 1200);
+          log(`⚡ مهارة حرجة! ${hBase.skill} — ${dmg} ضرر!`);
         } else {
           log(`استخدمت ${hBase.skill} — ${dmg} ضرر!`);
         }
@@ -273,13 +294,29 @@ export default function Battle() {
   const monsterPercent = Math.max(0, (monsterState.hp / (monsterState.maxHp || 1)) * 100);
 
   return (
-    <PageTransition className="bg-[hsl(260,30%,5%)] relative overflow-hidden">
+    <PageTransition className={`bg-[hsl(260,30%,5%)] relative overflow-hidden ${screenShake ? 'animate-screen-shake' : ''}`}>
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-secondary/40 via-background to-black pointer-events-none" />
 
       {/* Crit flash overlay */}
       {showCritFlash && (
-        <div className="absolute inset-0 z-40 pointer-events-none animate-in fade-in duration-100"
-          style={{ background: 'radial-gradient(ellipse at center, rgba(250,200,0,0.25) 0%, transparent 70%)' }} />
+        <div className="absolute inset-0 z-40 pointer-events-none"
+          style={{ background: 'radial-gradient(ellipse at center, rgba(250,200,0,0.22) 0%, transparent 70%)' }} />
+      )}
+
+      {/* Critical hit text */}
+      {showCritText && (
+        <div className="absolute inset-0 z-50 flex items-center justify-center pointer-events-none">
+          <div className="animate-crit-text text-center select-none">
+            <div className="text-4xl font-black"
+              style={{
+                color: '#fbbf24',
+                textShadow: '0 0 20px #f59e0b, 0 0 40px #d97706, 0 0 4px #000',
+                letterSpacing: '0.05em',
+              }}>
+              ⚡ ضربة حرجة!
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Header */}
@@ -289,9 +326,9 @@ export default function Battle() {
         </Button>
         <div className="flex items-center gap-3">
           {comboCount >= 2 && (
-            <div className="flex items-center gap-1 bg-accent/20 border border-accent/50 rounded-full px-2 py-0.5 animate-in slide-in-from-top-2 duration-200">
+            <div className="flex items-center gap-1 bg-accent/20 border border-accent/50 rounded-full px-2 py-0.5">
               <span className="text-accent font-black text-xs">x{comboCount}</span>
-              <span className="text-[10px] text-accent/80">كومبو</span>
+              <span className="text-[10px] text-accent/70">كومبو</span>
             </div>
           )}
           <div className="text-xs font-black tracking-widest text-muted-foreground">
@@ -304,13 +341,15 @@ export default function Battle() {
       <div className="flex-1 flex flex-col justify-center items-center relative z-10 px-6 mt-14">
 
         {/* Monster */}
-        <div className="w-full flex flex-col items-center justify-end h-52 mb-4 relative">
+        <div className="w-full flex flex-col items-center justify-end h-56 mb-2 relative">
           <div className="w-52 text-center mb-2">
-            <div className="flex items-center justify-center gap-2 mb-1">
-              <span className="text-2xl" style={{ filter: 'drop-shadow(0 0 6px rgba(255,100,0,0.6))' }}>
-                {monsterState.emoji}
-              </span>
-              <span className="text-sm font-black text-white uppercase tracking-wider">{monsterState.arName}</span>
+            {/* Emoji above name */}
+            <div className="text-4xl mb-1 leading-none"
+              style={{ filter: 'drop-shadow(0 0 8px rgba(255,120,0,0.7))' }}>
+              {monsterState.emoji}
+            </div>
+            <div className="text-sm font-black text-white mb-1 uppercase tracking-wider">
+              {monsterState.arName}
             </div>
             <div className="h-2 w-full bg-black rounded-full overflow-hidden border border-border">
               <div className="h-full bg-red-600 transition-all duration-300" style={{ width: `${monsterPercent}%` }} />
@@ -325,10 +364,10 @@ export default function Battle() {
                 <span
                   className="font-black"
                   style={{
-                    fontSize: d.isCrit ? '2.2rem' : '1.8rem',
+                    fontSize: d.isCrit ? '2.4rem' : '1.8rem',
                     color: d.isCrit ? '#fbbf24' : '#ffffff',
                     textShadow: d.isCrit
-                      ? '0 0 8px #f59e0b, 0 0 20px #f59e0b, 0 0 4px #000'
+                      ? '0 0 10px #f59e0b, 0 0 24px #f59e0b, 0 0 4px #000'
                       : '0 0 5px red, 0 0 10px black',
                   }}
                 >
@@ -354,7 +393,7 @@ export default function Battle() {
             ))}
           </div>
           <div className="w-48 text-center">
-            <div className="h-3 w-full bg-black rounded-full overflow-hidden border border-border shadow-[0_0_10px_rgba(0,0,0,0.5)]">
+            <div className="h-3 w-full bg-black rounded-full overflow-hidden border border-border">
               <div
                 className="h-full transition-all duration-300"
                 style={{
@@ -370,7 +409,7 @@ export default function Battle() {
 
       {/* Battle Log & Controls */}
       <div className="bg-card/90 backdrop-blur-md border-t border-border p-4 relative z-20">
-        <div className="h-16 mb-4 overflow-hidden flex flex-col-reverse">
+        <div className="h-14 mb-3 overflow-hidden flex flex-col-reverse">
           {battleLog.map((msg, i) => (
             <div key={i} className={`text-xs ${i === 0 ? 'text-white font-bold' : 'text-muted-foreground'} mb-1 leading-tight`}>
               {msg}
@@ -415,38 +454,50 @@ export default function Battle() {
 
       {/* Result Overlay */}
       {result && (
-        <div className="absolute inset-0 bg-black/80 z-50 flex flex-col items-center justify-center p-6 animate-in fade-in duration-500">
-          <div className="text-6xl mb-2">{result === 'win' ? '🏆' : '💀'}</div>
+        <div className="absolute inset-0 bg-black/85 z-50 flex flex-col items-center justify-center p-6 animate-in fade-in duration-500">
+          <div className="text-7xl mb-3">{result === 'win' ? '🏆' : '💀'}</div>
           <h2
-            className={`text-5xl font-black uppercase tracking-widest mb-2 ${result === 'win' ? 'text-accent' : 'text-primary'}`}
-            style={{ textShadow: `0 0 20px ${result === 'win' ? 'rgba(240,192,64,0.6)' : 'rgba(139,0,0,0.8)'}` }}
+            className={`text-5xl font-black uppercase tracking-widest mb-1 ${result === 'win' ? 'text-accent' : 'text-primary'}`}
+            style={{ textShadow: `0 0 24px ${result === 'win' ? 'rgba(240,192,64,0.7)' : 'rgba(139,0,0,0.9)'}` }}
           >
             {result === 'win' ? 'انتصار!' : 'هُزمت!'}
           </h2>
+
           {result === 'win' ? (
-            <div className="bg-card border border-border p-6 rounded-xl w-full max-w-xs text-center my-6">
-              <div className="text-sm text-muted-foreground uppercase tracking-wider mb-4">المكافآت</div>
+            <div className="bg-card border border-border p-5 rounded-xl w-full max-w-xs text-center my-6">
+              <div className="text-xs text-muted-foreground uppercase tracking-widest mb-4">المكافآت</div>
               <div className="flex justify-between items-center mb-4">
                 <span className="text-white font-bold">✨ خبرة</span>
-                <span className="text-green-400 font-mono text-xl font-black">+{monsterState.exp}</span>
+                <span className="text-green-400 font-mono text-2xl font-black">+{monsterState.exp}</span>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-white font-bold">💰 ذهب</span>
-                <span className="text-accent font-mono text-xl font-black">+{monsterState.gold}</span>
+                <span className="text-accent font-mono text-2xl font-black">+{monsterState.gold}</span>
               </div>
             </div>
           ) : (
-            <div className="text-muted-foreground my-8 text-center px-4">
+            <div className="text-muted-foreground my-6 text-center px-4 text-sm">
               سقط بطلك. اجمع قوتك وحاول مجدداً.
             </div>
           )}
-          <Button
-            className="w-full max-w-xs h-14 bg-white hover:bg-white/90 text-black font-black uppercase tracking-widest"
-            onClick={() => setLocation('/')}
-            disabled={recordBattleMut.isPending}
-          >
-            {recordBattleMut.isPending ? 'جاري الحفظ...' : '🏠 العودة'}
-          </Button>
+
+          <div className="w-full max-w-xs flex flex-col gap-3">
+            <Button
+              className="w-full h-13 bg-primary hover:bg-primary/90 text-white font-black text-base uppercase tracking-widest border border-red-500"
+              onClick={initBattle}
+              disabled={recordBattleMut.isPending}
+            >
+              {recordBattleMut.isPending ? '...' : '⚔️ العب مجدداً'}
+            </Button>
+            <Button
+              variant="outline"
+              className="w-full h-11 bg-transparent border-white/30 text-white/80 hover:bg-white/10 font-bold"
+              onClick={() => setLocation('/')}
+              disabled={recordBattleMut.isPending}
+            >
+              🏠 العودة للقائمة
+            </Button>
+          </div>
         </div>
       )}
     </PageTransition>
