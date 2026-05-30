@@ -146,10 +146,29 @@ export default function Heroes() {
                         <span className="text-xs text-white font-bold">مهارة: <span className="text-accent">{h.skill}</span></span>
                         <span className="text-[10px] font-mono bg-secondary px-2 py-0.5 rounded">مستوى {player?.hero_level ?? 1}</span>
                       </div>
-                      <Button className="w-full bg-accent/20 hover:bg-accent/30 text-accent border border-accent/50 h-9 text-xs"
-                        onClick={handleUpgrade} disabled={upgradeSkillMut.isPending}>
-                        ترقية المهارة (100 ذهب)
-                      </Button>
+                      {isSelected && (
+  <div className="pt-2 border-t border-border/30 space-y-2">
+    <div className="flex justify-between items-center">
+      <span className="text-xs text-white font-bold">مهارة: <span className="text-accent">{h.skill}</span></span>
+      <span className="text-[10px] font-mono bg-secondary px-2 py-0.5 rounded">مستوى {player?.hero_level ?? 1}</span>
+    </div>
+    {/* ترقية المهارة */}
+    <Button className="w-full bg-accent/20 hover:bg-accent/30 text-accent border border-accent/50 h-9 text-xs"
+      onClick={handleUpgrade} disabled={upgradeSkillMut.isPending}>
+      ⬆️ ترقية المهارة (100 ذهب)
+    </Button>
+    {/* ترقية النجوم */}
+    <Button className="w-full h-9 text-xs font-bold bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-400 border border-yellow-500/50"
+      onClick={() => fetch(`/api/players/me/hero-stars?telegram_id=${tgUser.telegram_id}`, { method: 'PATCH' }).then(() => queryClient.invalidateQueries({ queryKey: getGetPlayerQueryKey({ telegram_id: tgUser.telegram_id }) }))}>
+      ⭐ ترقية النجوم
+    </Button>
+    {/* الصعود */}
+    <Button className="w-full h-9 text-xs font-bold bg-red-500/20 hover:bg-red-500/30 text-red-400 border border-red-500/50"
+      onClick={() => fetch(`/api/players/me/hero-ascend?telegram_id=${tgUser.telegram_id}`, { method: 'PATCH' }).then(() => queryClient.invalidateQueries({ queryKey: getGetPlayerQueryKey({ telegram_id: tgUser.telegram_id }) }))}>
+      🔥 صعود البطل
+    </Button>
+  </div>
+)}
                     </div>
                   ) : (
                     <Button className="w-full h-9 text-xs font-bold"
