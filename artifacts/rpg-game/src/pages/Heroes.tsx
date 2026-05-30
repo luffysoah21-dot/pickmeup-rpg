@@ -38,6 +38,32 @@ export default function Heroes() {
     },
   });
 
+  const handleUpgrade = () => {
+    if (player?.gold && player.gold >= 100) {
+      upgradeSkillMut.mutate({ params: { telegram_id: tgUser.telegram_id } });
+    } else {
+      toast({ title: 'ذهب غير كافٍ', description: 'تحتاج إلى 100 ذهب لترقية مهارتك.', variant: 'destructive' });
+    }
+  };
+
+  const handleStarUpgrade = () => {
+    fetch(`/api/players/me/hero-stars?telegram_id=${tgUser.telegram_id}`, { method: 'PATCH' })
+      .then(res => res.json())
+      .then(data => {
+        toast({ title: data.message ?? 'تمت الترقية!', className: 'bg-primary border-none text-white' });
+        queryClient.invalidateQueries({ queryKey: getGetPlayerQueryKey({ telegram_id: tgUser.telegram_id }) });
+      });
+  };
+
+  const handleAscend = () => {
+    fetch(`/api/players/me/hero-ascend?telegram_id=${tgUser.telegram_id}`, { method: 'PATCH' })
+      .then(res => res.json())
+      .then(data => {
+        toast({ title: data.message ?? 'تم الصعود!', className: 'bg-primary border-none text-white' });
+        queryClient.invalidateQueries({ queryKey: getGetPlayerQueryKey({ telegram_id: tgUser.telegram_id }) });
+      });
+  };
+
   if (isLoading) {
     return (
       <PageTransition className="justify-center items-center">
@@ -46,10 +72,9 @@ export default function Heroes() {
     );
   }
 
-  const ownedHeroes  = player?.owned_heroes ?? [];
-  const playerLevel  = player?.level ?? 1;
+  const ownedHeroes = player?.owned_heroes ?? [];
+  const playerLevel = player?.level ?? 1;
 
-  /** True if the player can use this hero */
   const isUnlocked = (heroType: string) =>
     STARTER_HEROES.includes(heroType) || ownedHeroes.includes(heroType);
 
@@ -58,14 +83,6 @@ export default function Heroes() {
       data: { hero_type: heroType },
       params: { telegram_id: tgUser.telegram_id },
     });
-  };
-
-  const handleUpgrade = () => {
-    if (player?.gold && player.gold >= 100) {
-      upgradeSkillMut.mutate({ params: { telegram_id: tgUser.telegram_id } });
-    } else {
-      toast({ title: 'ذهب غير كافٍ', description: 'تحتاج إلى 100 ذهب لترقية مهارتك.', variant: 'destructive' });
-    }
   };
 
   return (
@@ -84,10 +101,10 @@ export default function Heroes() {
 
       <div className="flex-1 overflow-y-auto space-y-3 pb-4">
         {ALL_HEROES.map(h => {
-          const isSelected  = player?.hero_type === h.type;
-          const unlocked    = isUnlocked(h.type);
-          const levelOk     = playerLevel >= h.unlockLevel;
-          const rc          = RARITY_COLORS[h.rarity];
+          const isSelected = player?.hero_type === h.type;
+          const unlocked   = isUnlocked(h.type);
+          const levelOk    = playerLevel >= h.unlockLevel;
+          const rc         = RARITY_COLORS[h.rarity];
 
           return (
             <div
@@ -101,7 +118,6 @@ export default function Heroes() {
               }}
             >
               <div className="p-3 flex gap-3">
-                {/* Avatar */}
                 <div className="shrink-0 flex items-center justify-center w-20 h-20 rounded-lg overflow-hidden bg-black/40">
                   {unlocked ? (
                     <HeroArt type={h.type} selected={isSelected} />
@@ -115,7 +131,6 @@ export default function Heroes() {
                   )}
                 </div>
 
-                {/* Info */}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between mb-0.5">
                     <span className="font-black text-white text-base">{h.name}</span>
@@ -141,34 +156,26 @@ export default function Heroes() {
               {unlocked && (
                 <div className="px-3 pb-3">
                   {isSelected ? (
-                    <div className="pt-2 border-t border-border/30">
-                      <div className="flex justify-between items-center mb-2">
+                    <div className="pt-2 border-t border-border/30 space-y-2">
+                      <div className="flex justify-between items-center mb-1">
                         <span className="text-xs text-white font-bold">مهارة: <span className="text-accent">{h.skill}</span></span>
                         <span className="text-[10px] font-mono bg-secondary px-2 py-0.5 rounded">مستوى {player?.hero_level ?? 1}</span>
                       </div>
-                      {isSelected && (
-  <div className="pt-2 border-t border-border/30 space-y-2">
-    <div className="flex justify-between items-center">
-      <span className="text-xs text-white font-bold">مهارة: <span className="text-accent">{h.skill}</span></span>
-      <span className="text-[10px] font-mono bg-secondary px-2 py-0.5 rounded">مستوى {player?.hero_level ?? 1}</span>
-    </div>
-    {/* ترقية المهارة */}
-    <Button className="w-full bg-accent/20 hover:bg-accent/30 text-accent border border-accent/50 h-9 text-xs"
-      onClick={handleUpgrade} disabled={upgradeSkillMut.isPending}>
-      ⬆️ ترقية المهارة (100 ذهب)
-    </Button>
-    {/* ترقية النجوم */}
-    <Button className="w-full h-9 text-xs font-bold bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-400 border border-yellow-500/50"
-      onClick={() => fetch(`/api/players/me/hero-stars?telegram_id=${tgUser.telegram_id}`, { method: 'PATCH' }).then(() => queryClient.invalidateQueries({ queryKey: getGetPlayerQueryKey({ telegram_id: tgUser.telegram_id }) }))}>
-      ⭐ ترقية النجوم
-    </Button>
-    {/* الصعود */}
-    <Button className="w-full h-9 text-xs font-bold bg-red-500/20 hover:bg-red-500/30 text-red-400 border border-red-500/50"
-      onClick={() => fetch(`/api/players/me/hero-ascend?telegram_id=${tgUser.telegram_id}`, { method: 'PATCH' }).then(() => queryClient.invalidateQueries({ queryKey: getGetPlayerQueryKey({ telegram_id: tgUser.telegram_id }) }))}>
-      🔥 صعود البطل
-    </Button>
-  </div>
-)}
+                      {/* ترقية المهارة */}
+                      <Button className="w-full bg-accent/20 hover:bg-accent/30 text-accent border border-accent/50 h-9 text-xs"
+                        onClick={handleUpgrade} disabled={upgradeSkillMut.isPending}>
+                        ⬆️ ترقية المهارة (100 ذهب)
+                      </Button>
+                      {/* ترقية النجوم */}
+                      <Button className="w-full h-9 text-xs font-bold bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-400 border border-yellow-500/50"
+                        onClick={handleStarUpgrade}>
+                        ⭐ ترقية النجوم
+                      </Button>
+                      {/* الصعود */}
+                      <Button className="w-full h-9 text-xs font-bold bg-red-500/20 hover:bg-red-500/30 text-red-400 border border-red-500/50"
+                        onClick={handleAscend}>
+                        🔥 صعود البطل
+                      </Button>
                     </div>
                   ) : (
                     <Button className="w-full h-9 text-xs font-bold"
