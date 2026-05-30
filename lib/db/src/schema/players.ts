@@ -11,6 +11,13 @@ export const playersTable = pgTable("players", {
   gold: integer("gold").notNull().default(0),
   heroType: text("hero_type"),
   heroLevel: integer("hero_level").notNull().default(1),
+  // نظام تطوير الأبطال الجديد ⬇️
+  heroStars: integer("hero_stars").notNull().default(1),
+  heroAscension: integer("hero_ascension").notNull().default(0),
+  heroSkillLevel: integer("hero_skill_level").notNull().default(1),
+  heroFragments: integer("hero_fragments").notNull().default(0),
+  skillBooks: integer("skill_books").notNull().default(0),
+  ascensionStones: integer("ascension_stones").notNull().default(0),
   // Summon system
   ownedHeroes: text("owned_heroes").notNull().default(""),
   pityEpic: integer("pity_epic").notNull().default(0),
