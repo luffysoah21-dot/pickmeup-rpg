@@ -29,8 +29,11 @@ import type {
   HealthStatus,
   HeroSelection,
   LeaderboardEntry,
+  PerformSummon400,
   Player,
   SelectHeroParams,
+  SummonInput,
+  SummonResult,
   UpgradeSkillParams
 } from './api.schemas';
 
@@ -224,7 +227,7 @@ export const getSelectHeroUrl = (params: SelectHeroParams,) => {
 }
 
 /**
- * @summary Select hero type for player
+ * @summary Select active hero type for player
  */
 export const selectHero = async (heroSelection: HeroSelection,
     params: SelectHeroParams, options?: RequestInit): Promise<Player> => {
@@ -274,7 +277,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type SelectHeroMutationError = ErrorType<unknown>
 
     /**
- * @summary Select hero type for player
+ * @summary Select active hero type for player
  */
 export const useSelectHero = <TError = ErrorType<unknown>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof selectHero>>, TError,{data: BodyType<HeroSelection>;params: SelectHeroParams}, TContext>, request?: SecondParameter<typeof customFetch>}
@@ -602,4 +605,75 @@ export function useGetLeaderboard<TData = Awaited<ReturnType<typeof getLeaderboa
 
 
 
+
+export const getPerformSummonUrl = () => {
+
+
+
+
+  return `/api/summon`
+}
+
+/**
+ * @summary Perform hero summon (gacha)
+ */
+export const performSummon = async (summonInput: SummonInput, options?: RequestInit): Promise<SummonResult> => {
+
+  return customFetch<SummonResult>(getPerformSummonUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      summonInput,)
+  }
+);}
+
+
+
+
+export const getPerformSummonMutationOptions = <TError = ErrorType<PerformSummon400>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof performSummon>>, TError,{data: BodyType<SummonInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof performSummon>>, TError,{data: BodyType<SummonInput>}, TContext> => {
+
+const mutationKey = ['performSummon'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof performSummon>>, {data: BodyType<SummonInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  performSummon(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PerformSummonMutationResult = NonNullable<Awaited<ReturnType<typeof performSummon>>>
+    export type PerformSummonMutationBody = BodyType<SummonInput>
+    export type PerformSummonMutationError = ErrorType<PerformSummon400>
+
+    /**
+ * @summary Perform hero summon (gacha)
+ */
+export const usePerformSummon = <TError = ErrorType<PerformSummon400>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof performSummon>>, TError,{data: BodyType<SummonInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof performSummon>>,
+        TError,
+        {data: BodyType<SummonInput>},
+        TContext
+      > => {
+      return useMutation(getPerformSummonMutationOptions(options));
+    }
 

@@ -17,4 +17,7 @@ export interface Player {
   /** @nullable */
   hero_type: string | null;
   hero_level: number;
+  owned_heroes: string[];
+  pity_epic: number;
+  pity_legendary: number;
 }

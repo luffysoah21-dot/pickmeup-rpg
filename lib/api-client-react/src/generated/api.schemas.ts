@@ -20,19 +20,13 @@ export interface Player {
   /** @nullable */
   hero_type: string | null;
   hero_level: number;
+  owned_heroes: string[];
+  pity_epic: number;
+  pity_legendary: number;
 }
 
-export type HeroSelectionHeroType = typeof HeroSelectionHeroType[keyof typeof HeroSelectionHeroType];
-
-
-export const HeroSelectionHeroType = {
-  warrior: 'warrior',
-  mage: 'mage',
-  assassin: 'assassin',
-} as const;
-
 export interface HeroSelection {
-  hero_type: HeroSelectionHeroType;
+  hero_type: string;
 }
 
 export type BattleInputResult = typeof BattleInputResult[keyof typeof BattleInputResult];
@@ -75,6 +69,41 @@ export interface LeaderboardEntry {
   hero_type: string | null;
 }
 
+export type SummonInputSummonType = typeof SummonInputSummonType[keyof typeof SummonInputSummonType];
+
+
+export const SummonInputSummonType = {
+  normal: 'normal',
+  premium: 'premium',
+  x10: 'x10',
+} as const;
+
+export interface SummonInput {
+  telegram_id: string;
+  summon_type: SummonInputSummonType;
+}
+
+export type SummonedHeroRarity = typeof SummonedHeroRarity[keyof typeof SummonedHeroRarity];
+
+
+export const SummonedHeroRarity = {
+  common: 'common',
+  rare: 'rare',
+  epic: 'epic',
+  legendary: 'legendary',
+} as const;
+
+export interface SummonedHero {
+  hero_type: string;
+  rarity: SummonedHeroRarity;
+  is_new: boolean;
+}
+
+export interface SummonResult {
+  summoned: SummonedHero[];
+  player: Player;
+}
+
 export type GetPlayerParams = {
 telegram_id: string;
 username?: string;
@@ -95,5 +124,9 @@ limit?: number;
 
 export type GetLeaderboardParams = {
 limit?: number;
+};
+
+export type PerformSummon400 = {
+  error: string;
 };
 

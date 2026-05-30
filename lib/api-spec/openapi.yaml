@@ -16,6 +16,8 @@ tags:
     description: Battle management
   - name: leaderboard
     description: Leaderboard
+  - name: summon
+    description: Hero summon (gacha)
 paths:
   /healthz:
     get:
@@ -59,7 +61,7 @@ paths:
     patch:
       operationId: selectHero
       tags: [players]
-      summary: Select hero type for player
+      summary: Select active hero type for player
       parameters:
         - name: telegram_id
           in: query
@@ -167,6 +169,35 @@ paths:
                 items:
                   $ref: "#/components/schemas/LeaderboardEntry"
 
+  /summon:
+    post:
+      operationId: performSummon
+      tags: [summon]
+      summary: Perform hero summon (gacha)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SummonInput"
+      responses:
+        "200":
+          description: Summon result with summoned heroes and updated player
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SummonResult"
+        "400":
+          description: Not enough gold or invalid type
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [error]
+                properties:
+                  error:
+                    type: string
+
 components:
   schemas:
     HealthStatus:
@@ -179,7 +210,7 @@ components:
 
     Player:
       type: object
-      required: [id, telegram_id, username, level, exp, gold, hero_type, hero_level, exp_to_next]
+      required: [id, telegram_id, username, level, exp, gold, hero_type, hero_level, exp_to_next, owned_heroes, pity_epic, pity_legendary]
       properties:
         id:
           type: integer
@@ -199,6 +230,14 @@ components:
           type: ["string", "null"]
         hero_level:
           type: integer
+        owned_heroes:
+          type: array
+          items:
+            type: string
+        pity_epic:
+          type: integer
+        pity_legendary:
+          type: integer
 
     HeroSelection:
       type: object
@@ -206,7 +245,6 @@ components:
       properties:
         hero_type:
           type: string
-          enum: [warrior, mage, assassin]
 
     BattleInput:
       type: object
@@ -266,3 +304,36 @@ components:
           type: integer
         hero_type:
           type: ["string", "null"]
+
+    SummonInput:
+      type: object
+      required: [telegram_id, summon_type]
+      properties:
+        telegram_id:
+          type: string
+        summon_type:
+          type: string
+          enum: [normal, premium, x10]
+
+    SummonedHero:
+      type: object
+      required: [hero_type, rarity, is_new]
+      properties:
+        hero_type:
+          type: string
+        rarity:
+          type: string
+          enum: [common, rare, epic, legendary]
+        is_new:
+          type: boolean
+
+    SummonResult:
+      type: object
+      required: [summoned, player]
+      properties:
+        summoned:
+          type: array
+          items:
+            $ref: "#/components/schemas/SummonedHero"
+        player:
+          $ref: "#/components/schemas/Player"

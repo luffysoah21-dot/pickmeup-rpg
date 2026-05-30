@@ -5,7 +5,10 @@
  * Telegram RPG Game API
  * OpenAPI spec version: 0.1.0
  */
+import type { SummonedHeroRarity } from './summonedHeroRarity';
 
-export interface HeroSelection {
+export interface SummonedHero {
   hero_type: string;
+  rarity: SummonedHeroRarity;
+  is_new: boolean;
 }

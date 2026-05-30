@@ -6,6 +6,6 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface HeroSelection {
-  hero_type: string;
-}
+export type PerformSummon400 = {
+  error: string;
+};

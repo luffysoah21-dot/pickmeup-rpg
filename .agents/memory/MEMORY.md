@@ -1,0 +1,2 @@
+- [API server zod imports](api-server-zod.md) — use @workspace/api-zod (not bare zod) for route validation; schemas auto-generated from openapi.yaml
+- [Summon system design](summon-system.md) — owned_heroes stored as comma-sep text in DB, serialized as array; floor unlock is level-gated (not stored in DB)

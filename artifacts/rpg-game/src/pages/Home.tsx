@@ -5,8 +5,8 @@ import { useGetPlayer, getGetPlayerQueryKey } from '@workspace/api-client-react'
 import { getTelegramUser } from '@/lib/telegram';
 import { HeroArt } from '@/components/HeroArt';
 import { Button } from '@/components/ui/button';
+import { getPlayerFloor } from '@/lib/game-data';
 
-/** Client-side fallback: EXP needed to advance from current level. level * 100 matches server. */
 const EXP_TO_NEXT = (level: number) => level * 100;
 
 export default function Home() {
@@ -33,23 +33,20 @@ export default function Home() {
     );
   }
 
-  const level = player?.level || 1;
-  const exp = player?.exp ?? 0;
-  // Server sends exp_to_next; fall back to client formula if server returns 0 (stale cache / edge case)
-  const expToNext = player?.exp_to_next && player.exp_to_next > 0
-    ? player.exp_to_next
-    : EXP_TO_NEXT(level);
+  const level      = player?.level || 1;
+  const exp        = player?.exp ?? 0;
+  const expToNext  = player?.exp_to_next && player.exp_to_next > 0 ? player.exp_to_next : EXP_TO_NEXT(level);
   const expPercent = Math.min(100, (exp / expToNext) * 100);
-
-  const needsHero = !player?.hero_type;
+  const needsHero  = !player?.hero_type;
+  const floor      = getPlayerFloor(level);
 
   return (
-    <PageTransition className="justify-between py-10 px-6">
+    <PageTransition className="justify-between py-8 px-6">
       <Particles />
 
       <div className="z-10 flex flex-col items-center">
-        {/* Header row: name left, gold + level right */}
-        <div className="w-full flex justify-between items-start mb-8">
+        {/* Header row */}
+        <div className="w-full flex justify-between items-start mb-6">
           <div className="flex flex-col">
             <span className="text-muted-foreground text-xs uppercase font-bold tracking-wider">اللاعب</span>
             <span className="text-xl font-black text-white">{player?.username || tgUser.username}</span>
@@ -64,68 +61,81 @@ export default function Home() {
         </div>
 
         {/* Hero portrait */}
-        <div className="relative w-48 h-48 flex items-center justify-center mb-8 border border-primary/30 rounded-full shadow-[inset_0_0_20px_rgba(139,0,0,0.2)] bg-card/50 backdrop-blur-sm">
-          <div className="absolute inset-0 rounded-full border border-accent/20" style={{ animation: 'idle-spin-cw 10s linear infinite' }} />
+        <div className="relative w-44 h-44 flex items-center justify-center mb-5 border border-primary/30 rounded-full shadow-[inset_0_0_20px_rgba(139,0,0,0.2)] bg-card/50 backdrop-blur-sm">
+          <div className="absolute inset-0 rounded-full border border-accent/20"
+            style={{ animation: 'idle-spin-cw 10s linear infinite' }} />
           <HeroArt type={player?.hero_type} className="scale-150" />
         </div>
 
+        {/* Current floor indicator */}
+        <div
+          className="flex items-center gap-2 mb-4 px-3 py-1.5 rounded-full text-xs font-bold"
+          style={{
+            background: `${floor.glowColor}`,
+            border: `1px solid ${floor.borderColor}`,
+            boxShadow: `0 0 8px ${floor.glowColor}`,
+          }}
+        >
+          <span>{floor.emoji}</span>
+          <span className="text-white">الطابق {floor.id}: {floor.name}</span>
+        </div>
+
         {needsHero ? (
-          <div className="text-center mb-6">
+          <div className="text-center mb-4">
             <h2 className="text-2xl font-black text-accent mb-2 uppercase tracking-widest">لم يتم اختيار بطل</h2>
-            <p className="text-sm text-muted-foreground">يجب عليك استدعاء بطل لبدء رحلتك.</p>
+            <p className="text-sm text-muted-foreground">قم باستدعاء بطل لبدء رحلتك!</p>
           </div>
         ) : (
-          <div className="w-full mb-8">
+          <div className="w-full mb-4">
             <div className="flex justify-between text-xs font-bold text-muted-foreground mb-1">
               <span>الخبرة</span>
               <span className="font-mono tabular-nums">{exp} / {expToNext}</span>
             </div>
             <div className="h-2.5 w-full bg-card rounded-full overflow-hidden border border-border">
               <div
-                className="h-full bg-gradient-to-r from-primary to-accent transition-all duration-500"
-                style={{ width: `${expPercent}%` }}
+                className="h-full transition-all duration-500"
+                style={{
+                  width: `${expPercent}%`,
+                  background: 'linear-gradient(90deg, hsl(var(--primary)), hsl(var(--accent)))',
+                }}
               />
             </div>
           </div>
         )}
       </div>
 
-      <div className="z-10 w-full grid grid-cols-2 gap-4">
+      {/* Navigation grid */}
+      <div className="z-10 w-full grid grid-cols-2 gap-3">
         {needsHero ? (
           <Button
-            onClick={() => setLocation('/heroes')}
+            onClick={() => setLocation('/summon')}
             className="col-span-2 h-14 bg-primary hover:bg-primary/90 text-white font-black uppercase tracking-widest border border-red-500 shadow-[0_0_15px_rgba(139,0,0,0.5)]"
           >
-            استدعاء بطل
+            ✨ استدعاء بطل
           </Button>
         ) : (
           <Button
-            onClick={() => setLocation('/battle')}
-            className="col-span-2 h-16 bg-primary hover:bg-primary/90 text-white text-lg font-black uppercase tracking-widest border border-red-500 shadow-[0_0_15px_rgba(139,0,0,0.5)]"
+            onClick={() => setLocation('/tower')}
+            className="col-span-2 h-14 bg-primary hover:bg-primary/90 text-white text-lg font-black uppercase tracking-widest border border-red-500 shadow-[0_0_15px_rgba(139,0,0,0.5)]"
           >
-            ابدأ القتال
+            ⚔️ برج الأبطال
           </Button>
         )}
 
-        <Button
-          variant="outline"
-          onClick={() => setLocation('/heroes')}
-          className="h-12 bg-card/50 border-secondary text-white font-bold hover:bg-secondary/50 hover:text-white"
-        >
+        <Button variant="outline" onClick={() => setLocation('/heroes')}
+          className="h-11 bg-card/50 border-secondary text-white font-bold hover:bg-secondary/50 hover:text-white">
           الأبطال
         </Button>
-        <Button
-          variant="outline"
-          onClick={() => setLocation('/shop')}
-          className="h-12 bg-card/50 border-secondary text-white font-bold hover:bg-secondary/50 hover:text-white"
-        >
+        <Button variant="outline" onClick={() => setLocation('/summon')}
+          className="h-11 bg-card/50 border-secondary text-white font-bold hover:bg-secondary/50 hover:text-white">
+          ✨ استدعاء
+        </Button>
+        <Button variant="outline" onClick={() => setLocation('/shop')}
+          className="h-11 bg-card/50 border-secondary text-white font-bold hover:bg-secondary/50 hover:text-white">
           المتجر
         </Button>
-        <Button
-          variant="outline"
-          onClick={() => setLocation('/leaderboard')}
-          className="col-span-2 h-12 bg-card/50 border-secondary text-white font-bold hover:bg-secondary/50 hover:text-white"
-        >
+        <Button variant="outline" onClick={() => setLocation('/leaderboard')}
+          className="h-11 bg-card/50 border-secondary text-white font-bold hover:bg-secondary/50 hover:text-white">
           المتصدرون
         </Button>
       </div>

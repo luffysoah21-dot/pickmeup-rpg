@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { motion } from 'framer-motion';
 
-export const PageTransition = ({ children, className = '' }: { children: React.ReactNode, className?: string }) => {
+export const PageTransition = ({ children, className = '', style }: { children: React.ReactNode; className?: string; style?: React.CSSProperties }) => {
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
@@ -9,6 +9,7 @@ export const PageTransition = ({ children, className = '' }: { children: React.R
       exit={{ opacity: 0, y: -10 }}
       transition={{ duration: 0.3 }}
       className={`min-h-[100dvh] w-full max-w-[375px] mx-auto bg-background text-foreground relative flex flex-col ${className}`}
+      style={style}
     >
       {children}
     </motion.div>

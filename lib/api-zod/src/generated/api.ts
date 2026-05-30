@@ -34,19 +34,22 @@ export const GetPlayerResponse = zod.object({
   "exp_to_next": zod.number(),
   "gold": zod.number(),
   "hero_type": zod.string().nullable(),
-  "hero_level": zod.number()
+  "hero_level": zod.number(),
+  "owned_heroes": zod.array(zod.string()),
+  "pity_epic": zod.number(),
+  "pity_legendary": zod.number()
 })
 
 
 /**
- * @summary Select hero type for player
+ * @summary Select active hero type for player
  */
 export const SelectHeroQueryParams = zod.object({
   "telegram_id": zod.coerce.string()
 })
 
 export const SelectHeroBody = zod.object({
-  "hero_type": zod.enum(['warrior', 'mage', 'assassin'])
+  "hero_type": zod.string()
 })
 
 export const SelectHeroResponse = zod.object({
@@ -58,7 +61,10 @@ export const SelectHeroResponse = zod.object({
   "exp_to_next": zod.number(),
   "gold": zod.number(),
   "hero_type": zod.string().nullable(),
-  "hero_level": zod.number()
+  "hero_level": zod.number(),
+  "owned_heroes": zod.array(zod.string()),
+  "pity_epic": zod.number(),
+  "pity_legendary": zod.number()
 })
 
 
@@ -78,7 +84,10 @@ export const UpgradeSkillResponse = zod.object({
   "exp_to_next": zod.number(),
   "gold": zod.number(),
   "hero_type": zod.string().nullable(),
-  "hero_level": zod.number()
+  "hero_level": zod.number(),
+  "owned_heroes": zod.array(zod.string()),
+  "pity_epic": zod.number(),
+  "pity_legendary": zod.number()
 })
 
 
@@ -133,5 +142,36 @@ export const GetLeaderboardResponseItem = zod.object({
   "hero_type": zod.string().nullable()
 })
 export const GetLeaderboardResponse = zod.array(GetLeaderboardResponseItem)
+
+
+/**
+ * @summary Perform hero summon (gacha)
+ */
+export const PerformSummonBody = zod.object({
+  "telegram_id": zod.string(),
+  "summon_type": zod.enum(['normal', 'premium', 'x10'])
+})
+
+export const PerformSummonResponse = zod.object({
+  "summoned": zod.array(zod.object({
+  "hero_type": zod.string(),
+  "rarity": zod.enum(['common', 'rare', 'epic', 'legendary']),
+  "is_new": zod.boolean()
+})),
+  "player": zod.object({
+  "id": zod.number(),
+  "telegram_id": zod.string(),
+  "username": zod.string(),
+  "level": zod.number(),
+  "exp": zod.number(),
+  "exp_to_next": zod.number(),
+  "gold": zod.number(),
+  "hero_type": zod.string().nullable(),
+  "hero_level": zod.number(),
+  "owned_heroes": zod.array(zod.string()),
+  "pity_epic": zod.number(),
+  "pity_legendary": zod.number()
+})
+})
 
 

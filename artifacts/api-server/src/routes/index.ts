@@ -3,6 +3,7 @@ import healthRouter from "./health";
 import playersRouter from "./players";
 import battlesRouter from "./battles";
 import leaderboardRouter from "./leaderboard";
+import summonRouter from "./summon";
 
 const router: IRouter = Router();
 
@@ -10,5 +11,6 @@ router.use(healthRouter);
 router.use(playersRouter);
 router.use(battlesRouter);
 router.use(leaderboardRouter);
+router.use(summonRouter);
 
 export default router;

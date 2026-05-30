@@ -6,32 +6,33 @@ import NotFound from "@/pages/not-found";
 import { useEffect } from "react";
 import { initTelegramApp } from "@/lib/telegram";
 
-import Home from "@/pages/Home";
-import Heroes from "@/pages/Heroes";
-import Battle from "@/pages/Battle";
+import Home        from "@/pages/Home";
+import Heroes      from "@/pages/Heroes";
+import Battle      from "@/pages/Battle";
 import Leaderboard from "@/pages/Leaderboard";
-import Shop from "@/pages/Shop";
+import Shop        from "@/pages/Shop";
+import Tower       from "@/pages/Tower";
+import Summon      from "@/pages/Summon";
 
 const queryClient = new QueryClient();
 
 function Router() {
   return (
     <Switch>
-      <Route path="/" component={Home} />
-      <Route path="/heroes" component={Heroes} />
-      <Route path="/battle" component={Battle} />
+      <Route path="/"            component={Home}        />
+      <Route path="/heroes"      component={Heroes}      />
+      <Route path="/battle"      component={Battle}      />
       <Route path="/leaderboard" component={Leaderboard} />
-      <Route path="/shop" component={Shop} />
-      <Route component={NotFound} />
+      <Route path="/shop"        component={Shop}        />
+      <Route path="/tower"       component={Tower}       />
+      <Route path="/summon"      component={Summon}      />
+      <Route                     component={NotFound}    />
     </Switch>
   );
 }
 
 function App() {
-  useEffect(() => {
-    initTelegramApp();
-  }, []);
-
+  useEffect(() => { initTelegramApp(); }, []);
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>

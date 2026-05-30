@@ -1,9 +1,12 @@
 import type { Player } from "@workspace/db";
 
-/** EXP needed to advance FROM current level. Formula: level * 100 (level 1→100, level 2→200, …) */
+/** EXP needed to advance FROM current level. level * 100 */
 const EXP_TO_NEXT = (level: number) => level * 100;
 
 export function serializePlayer(player: Player) {
+  const owned = player.ownedHeroes
+    ? player.ownedHeroes.split(",").filter(Boolean)
+    : [];
   return {
     id: player.id,
     telegram_id: player.telegramId,
@@ -14,5 +17,8 @@ export function serializePlayer(player: Player) {
     gold: player.gold,
     hero_type: player.heroType ?? null,
     hero_level: player.heroLevel,
+    owned_heroes: owned,
+    pity_epic: player.pityEpic,
+    pity_legendary: player.pityLegendary,
   };
 }
